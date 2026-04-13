@@ -1,7 +1,12 @@
 package com.tianji.learning.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.tianji.api.client.course.CatalogueClient;
+import com.tianji.api.client.course.CategoryClient;
 import com.tianji.api.client.course.CourseClient;
+import com.tianji.api.dto.course.CataSimpleInfoDTO;
+import com.tianji.api.dto.course.CourseFullInfoDTO;
 import com.tianji.api.dto.course.CourseSimpleInfoDTO;
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.domain.query.PageQuery;
@@ -11,6 +16,7 @@ import com.tianji.common.utils.CollUtils;
 import com.tianji.common.utils.UserContext;
 import com.tianji.learning.domain.po.LearningLesson;
 import com.tianji.learning.domain.vo.LearningLessonVO;
+import com.tianji.learning.enums.LessonStatus;
 import com.tianji.learning.mapper.LearningLessonMapper;
 import com.tianji.learning.service.ILearningLessonService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -40,6 +46,7 @@ import java.util.stream.Collectors;
 @Service
 public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper, LearningLesson> implements ILearningLessonService {
     private final CourseClient courseClient;
+    private final CatalogueClient catalogueClient;
     /*
     * 添加课程到用户中
     * */
@@ -106,6 +113,85 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         return PageDTO.of(page,list);
 
     }
+
+    /*
+    * 查询用户最近的学习课程
+    * */
+    @Override
+    public LearningLessonVO queryMyCurrentLesson() {
+        //获取用户id
+        Long userId = UserContext.getUser();
+        //根据用户id查询最近一次课程学习
+        // select *　from learning_lesson where user_id=userId and status = 1 orderby latest_time limit 1;
+        LearningLesson lesson = lambdaQuery()
+                .eq(LearningLesson::getUserId, userId)
+                .eq(LearningLesson::getStatus, LessonStatus.LEARNING)
+                .orderByDesc(LearningLesson::getLatestLearnTime)
+                .last("limit 1")
+                .one();
+        if(lesson == null){
+            //课程为空
+            return null;
+        }
+        //将对象转换为vo类
+        LearningLessonVO vo = BeanUtils.copyBean(lesson, LearningLessonVO.class);
+        //补充vo类信息
+        CourseFullInfoDTO infoById = courseClient.getCourseInfoById(lesson.getId(), false, false);
+        if(infoById == null){
+            throw new BadRequestException("课程不存在！");
+        }
+        vo.setSections(infoById.getSectionNum());
+        vo.setCourseCoverUrl(infoById.getCoverUrl());
+        vo.setCourseName(infoById.getName());
+        //统计用户课程总数
+        Integer count = lambdaQuery()
+                .eq(LearningLesson::getUserId, userId)
+                .count();
+        vo.setCourseAmount(count);
+        //查询小节信息
+        List<CataSimpleInfoDTO> cataInfos =
+                catalogueClient.batchQueryCatalogue(CollUtils.singletonList(lesson.getLatestSectionId()));
+        if (!CollUtils.isEmpty(cataInfos)) {
+            CataSimpleInfoDTO cataInfo = cataInfos.get(0);
+            vo.setLatestSectionName(cataInfo.getName());
+            vo.setLatestSectionIndex(cataInfo.getCIndex());
+        }
+        return vo;
+    }
+
+    /*
+    * 根据课程id查询课程状态以及课程信息
+    * */
+    @Override
+    public LearningLessonVO queryMyLessonStatus(Long courseId) {
+        Long userId = UserContext.getUser();
+        LearningLesson lesson = lambdaQuery()
+                .eq(LearningLesson::getUserId, userId)
+                .eq(LearningLesson::getCourseId, courseId)
+                .one();
+        if(lesson == null){
+            //说明当前用户中不存在该课程
+            return null;
+        }
+        //转换为vo类
+        LearningLessonVO vo = BeanUtils.copyBean(lesson, LearningLessonVO.class);
+        return vo;
+    }
+
+    /*
+    * 根据课程id删除用户的课程
+    * */
+    @Override
+    public void deleteMyLesson(List courseIds) {
+        //获取用户id
+        Long userId = UserContext.getUser();
+        // select * from learning_lesson where user_id = #{userId} and course_id = #{courseId}
+        QueryWrapper<LearningLesson> wrapper=new QueryWrapper<>();
+        wrapper.eq("user_id",userId);
+        wrapper.eq("courser_id",courseIds);
+        this.remove(wrapper);
+    }
+
 
 
     /*

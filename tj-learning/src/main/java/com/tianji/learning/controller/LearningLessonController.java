@@ -3,19 +3,19 @@ package com.tianji.learning.controller;
 
 import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.domain.query.PageQuery;
+import com.tianji.common.utils.UserContext;
 import com.tianji.learning.domain.vo.LearningLessonVO;
 import com.tianji.learning.service.ILearningLessonService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.codehaus.groovy.classgen.FinalVariableAnalyzer;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.swing.text.html.parser.TagElement;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -37,6 +37,24 @@ public class LearningLessonController {
     @GetMapping("/page")
     public PageDTO<LearningLessonVO> queryMyLessons(@RequestBody PageQuery pageQuery){
         return lessonService.queryMyLessons(pageQuery);
+    }
+
+    @ApiOperation("查询我正在学习的课程")
+    @GetMapping("/now")
+    public LearningLessonVO queryMyCurrentLesson(){
+        return lessonService.queryMyCurrentLesson();
+    }
+
+    @ApiOperation("查询课程的学习状态")
+    @GetMapping("/{courseId}")
+    public LearningLessonVO queryMyLessonStatus(@PathVariable("courseId") Long courseId){
+        return lessonService.queryMyLessonStatus(courseId);
+    }
+
+    @ApiOperation("删除当前用户的课程")
+    @DeleteMapping("/{courseId}")
+    public void deleteMyLesson(@PathVariable("courseId") Long courseId){
+        lessonService.deleteMyLesson(List.of(courseId));
     }
 
 }
