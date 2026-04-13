@@ -57,4 +57,10 @@ public class LearningLessonController {
         lessonService.deleteMyLesson(List.of(courseId));
     }
 
+    @ApiOperation("查询用户课程是否有效")
+    @GetMapping("/{courseId}/valid")
+    public Long isLessonValid(@PathVariable("courseId") Long courseId){
+        return lessonService.isLessonValid(courseId);
+    }
+
 }

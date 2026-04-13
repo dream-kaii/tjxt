@@ -192,6 +192,30 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
         this.remove(wrapper);
     }
 
+    /*
+    * 根据课程id和用户查询课程是否过期
+    * */
+    @Override
+    public Long isLessonValid(Long courseId) {
+        //获取用户id
+        Long userId = UserContext.getUser();
+        //select * from learning_lesson where user_id=#{userId} and course_id=#{courseId}
+        LearningLesson lesson = lambdaQuery()
+                .eq(LearningLesson::getCourseId, courseId)
+                .eq(LearningLesson::getUserId, userId)
+                .one();
+        if(lesson == null){
+            //没有该课程
+            return null;
+        }
+        //存在该课程 查询课程状态是否过期
+        if(lesson.getStatus() == LessonStatus.EXPIRED){
+            //说明该课程已经过期
+            return null;
+        }
+        //返回课表id
+        return lesson.getId();
+    }
 
 
     /*
