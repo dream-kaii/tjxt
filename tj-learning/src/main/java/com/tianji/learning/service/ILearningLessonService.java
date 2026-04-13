@@ -31,4 +31,6 @@ public interface ILearningLessonService extends IService<LearningLesson> {
 
     Long isLessonValid(Long courseId);
 
+    Integer countLearningLessonByCourse(Long courseId);
+
 }

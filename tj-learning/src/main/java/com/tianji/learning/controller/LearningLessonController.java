@@ -63,4 +63,9 @@ public class LearningLessonController {
         return lessonService.isLessonValid(courseId);
     }
 
+    @ApiOperation("统计课程学习人数")
+    @GetMapping("/{courseId}/count")
+    public Integer countLearningLessonByCourse(@PathVariable("courseId") Long courseId){
+        return lessonService.countLearningLessonByCourse(courseId);
+    }
 }
