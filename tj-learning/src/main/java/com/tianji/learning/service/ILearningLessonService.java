@@ -4,6 +4,7 @@ import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.common.domain.query.PageQuery;
 import com.tianji.learning.domain.po.LearningLesson;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.tianji.learning.domain.po.LearningRecord;
 import com.tianji.learning.domain.vo.LearningLessonVO;
 
 import java.util.List;
@@ -33,4 +34,5 @@ public interface ILearningLessonService extends IService<LearningLesson> {
 
     Integer countLearningLessonByCourse(Long courseId);
 
+    LearningLesson queryByUserAndCourseId(Long userId, Long courseId);
 }

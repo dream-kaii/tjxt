@@ -15,6 +15,7 @@ import com.tianji.common.utils.BeanUtils;
 import com.tianji.common.utils.CollUtils;
 import com.tianji.common.utils.UserContext;
 import com.tianji.learning.domain.po.LearningLesson;
+import com.tianji.learning.domain.po.LearningRecord;
 import com.tianji.learning.domain.vo.LearningLessonVO;
 import com.tianji.learning.enums.LessonStatus;
 import com.tianji.learning.mapper.LearningLessonMapper;
@@ -229,6 +230,11 @@ public class LearningLessonServiceImpl extends ServiceImpl<LearningLessonMapper,
                 .eq(LearningLesson::getCourseId, courseId)
                 .count();
         return count;
+    }
+
+    @Override
+    public LearningLesson queryByUserAndCourseId(Long userId, Long courseId) {
+        return lambdaQuery().eq(LearningLesson::getUserId,userId).eq(LearningLesson::getCourseId,courseId).one();
     }
 
 

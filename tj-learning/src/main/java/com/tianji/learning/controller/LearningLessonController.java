@@ -68,4 +68,5 @@ public class LearningLessonController {
     public Integer countLearningLessonByCourse(@PathVariable("courseId") Long courseId){
         return lessonService.countLearningLessonByCourse(courseId);
     }
+
 }
