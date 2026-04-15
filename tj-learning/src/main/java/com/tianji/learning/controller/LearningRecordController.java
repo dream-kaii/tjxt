@@ -30,6 +30,6 @@ public class LearningRecordController {
     @ApiOperation("提交学习记录")
     @PostMapping
     public void addLearningRecord(@RequestBody LearningRecordFormDTO dto){
-
+        learningRecordService.addLearningRecord(dto);
     }
 }
