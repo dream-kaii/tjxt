@@ -73,7 +73,7 @@ public class LearningRecordDelayTaskHandler {
         queue.add(new DelayTask<>(new RecordTaskData(record), Duration.ofSeconds(20)));
     }
 
-    private void writeRecordCache(LearningRecord record) {
+    public void writeRecordCache(LearningRecord record) {
         //将学习进度数据保存到redis中
         log.debug("更新学习记录的缓存数据");
         try {
@@ -89,7 +89,7 @@ public class LearningRecordDelayTaskHandler {
         }
     }
 
-    private LearningRecord readRecordCache(Long lessonId, Long sectionId) {
+    public LearningRecord readRecordCache(Long lessonId, Long sectionId) {
         try {
             //读取redis数据
             String key = StringUtils.format(RECORD_KEY_TEMPLATE,lessonId);
@@ -107,6 +107,11 @@ public class LearningRecordDelayTaskHandler {
 
     }
 
+    public void cleanRecordCache(Long lessonId, Long sectionId){
+        // 删除数据
+        String key = StringUtils.format(RECORD_KEY_TEMPLATE, lessonId);
+        redisTemplate.opsForHash().delete(key, sectionId.toString());
+    }
 
     @Data
     @NoArgsConstructor

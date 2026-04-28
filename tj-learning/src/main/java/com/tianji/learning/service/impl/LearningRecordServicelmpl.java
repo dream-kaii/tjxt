@@ -21,6 +21,7 @@ import com.tianji.learning.mapper.LearningLessonMapper;
 import com.tianji.learning.mapper.LearningRecordMapper;
 import com.tianji.learning.service.ILearningLessonService;
 import com.tianji.learning.service.ILearningRecordService;
+import com.tianji.learning.utils.LearningRecordDelayTaskHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,7 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
 
     private final ILearningLessonService lessonService;
     private final CourseClient CourseClient;
+    private final LearningRecordDelayTaskHandler taskHandler;
     /*
     * 实现查看课程的学习进度
     * */
@@ -71,6 +73,10 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
         else {
             finished = handleExamRecord(userId,dto);
         }
+        if(!finished){
+            //没有新学完的小节，无需更新课表中的学习进度
+            return;
+        }
         //处理课表数据
         handleLearningLessonsChanges(dto,finished);
 
@@ -91,14 +97,14 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
                 throw new BizIllegalException("课程不存在无法更新数据");
             }
             //比较课程是否已经全部完成了
-            allLearned = lesson.getLatestSectionId()+1 > course.getSectionNum();
+            allLearned = lesson.getLatestSectionId() + 1 > course.getSectionNum();
             //更新课表
             boolean update = lessonService
                     .lambdaUpdate()
                     .set(allLearned, LearningLesson::getStatus, LessonStatus.FINISHED.getValue())
-                    .set(!finished, LearningLesson::getLatestSectionId, dto.getSectionId())
-                    .set(!finished, LearningLesson::getLatestLearnTime, dto.getCommitTime())
-                    .setSql(!finished, "learned_sections = learned_sections + 1")
+                    .set(allLearned, LearningLesson::getLatestSectionId, dto.getSectionId())
+                    .set(allLearned, LearningLesson::getLatestLearnTime, dto.getCommitTime())
+                    .setSql(allLearned, "learned_sections = learned_sections + 1")
                     .eq(LearningLesson::getId, lesson.getId())
                     .update();
             if(!update){
@@ -144,6 +150,16 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
         //如果存在 则进行更新
         //判断是否是第一次完成
         boolean finished = !old.getFinished() && dto.getMoment() * 2 >= dto.getDuration();
+        if(!finished){
+            LearningRecord record = new LearningRecord();
+            record.setLessonId(dto.getLessonId());
+            record.setSectionId(dto.getSectionId());
+            record.setMoment(dto.getMoment());
+            record.setId(old.getId());
+            record.setFinished(old.getFinished());
+            taskHandler.addLearningRecordTask(record);
+            return false;
+        }
         // 4.2.更新数据
         boolean success = lambdaUpdate()
                 .set(LearningRecord::getMoment, dto.getMoment())
@@ -154,14 +170,25 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
         if(!success){
             throw new DbException("更新学习记录失败！");
         }
-        return finished ;
+        taskHandler.cleanRecordCache(dto.getLessonId(), dto.getSectionId());
+        return true ;
 
     }
 
     private LearningRecord queryOldRecord(Long lessonId, Long sectionId) {
-        return lambdaQuery()
+        //先查询缓存
+        LearningRecord record = taskHandler.readRecordCache(lessonId, sectionId);
+        //如果命中 直接返回
+        if (record != null){
+            return record;
+        }
+        //未命中 查询数据库
+        record = lambdaQuery()
                 .eq(LearningRecord::getLessonId, lessonId)
                 .eq(LearningRecord::getSectionId, sectionId)
                 .one();
+        //写入缓存中
+        taskHandler.writeRecordCache(record);
+        return record;
     }
 }
