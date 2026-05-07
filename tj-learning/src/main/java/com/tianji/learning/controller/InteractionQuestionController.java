@@ -1,15 +1,13 @@
 package com.tianji.learning.controller;
 
 
+import com.tianji.common.domain.dto.PageDTO;
 import com.tianji.learning.domain.dto.QuestionFormDTO;
+import com.tianji.learning.domain.vo.QuestionVO;
 import com.tianji.learning.service.IInteractionQuestionService;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <p>
@@ -27,14 +25,19 @@ public class InteractionQuestionController {
 
     @ApiOperation("新增提问")
     @PostMapping
-    public void saveQuestion(QuestionFormDTO dto){
+    public void saveQuestion(@RequestBody QuestionFormDTO dto){
         questionService.saveQuestion(dto);
     }
 
     @ApiOperation("修改提问")
     @PutMapping("/{id}")
-    public void updateQuestion(Long id,QuestionFormDTO dto){
+    public void updateQuestion(@PathVariable Long id,QuestionFormDTO dto){
         questionService.updateQuestion(id,dto);
     }
 
+    @ApiOperation("分页查询")
+    @GetMapping("/page")
+    public PageDTO<QuestionVO> queryQuestionPage(){
+        return null;
+    }
 }
