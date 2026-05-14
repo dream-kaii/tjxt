@@ -21,7 +21,7 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @TableName("interaction_reply")
-public class InteractionReply implements Serializable {
+public class    InteractionReply implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
