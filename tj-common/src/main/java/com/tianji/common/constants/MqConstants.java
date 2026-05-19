@@ -52,12 +52,10 @@ public interface MqConstants {
         /* 笔记被采集 */
         String NOTE_GATHERED = "note.gathered";
 
-        /*点赞的RoutingKey*/
+        /*点赞的RoutingKey模板，拼接业务类型后得到具体的RoutingKey，例如 QA -> QA.times.changed */
         String LIKED_TIMES_KEY_TEMPLATE = "{}.times.changed";
-        /*问答*/
-        String QA_LIKED_TIMES_KEY = "QA.times.changed";
-        /*笔记*/
-        String NOTE_LIKED_TIMES_KEY = "NOTE.times.changed";
+        /*点赞通配符RoutingKey，用于监听所有业务类型的点赞变更，匹配如 QA.times.changed、NOTE.times.changed 等 */
+        String LIKED_TIMES_KEY_PATTERN = "*.times.changed";
 
         /*短信系统发送短信*/
         String SMS_MESSAGE = "sms.message";
