@@ -8,6 +8,8 @@ import com.tianji.api.client.course.CourseClient;
 import com.tianji.api.dto.course.CourseFullInfoDTO;
 import com.tianji.api.dto.leanring.LearningLessonDTO;
 import com.tianji.api.dto.leanring.LearningRecordDTO;
+import com.tianji.common.autoconfigure.mq.RabbitMqHelper;
+import com.tianji.common.constants.MqConstants;
 import com.tianji.common.exceptions.BizIllegalException;
 import com.tianji.common.exceptions.DbException;
 import com.tianji.common.utils.BeanUtils;
@@ -16,9 +18,11 @@ import com.tianji.learning.domain.dto.LearningRecordFormDTO;
 import com.tianji.learning.domain.po.LearningLesson;
 import com.tianji.learning.domain.po.LearningRecord;
 import com.tianji.learning.enums.LessonStatus;
+import com.tianji.learning.enums.PointsRecordType;
 import com.tianji.learning.enums.SectionType;
 import com.tianji.learning.mapper.LearningLessonMapper;
 import com.tianji.learning.mapper.LearningRecordMapper;
+import com.tianji.learning.mapper.PointsRecordMapper;
 import com.tianji.learning.service.ILearningLessonService;
 import com.tianji.learning.service.ILearningRecordService;
 import com.tianji.learning.utils.LearningRecordDelayTaskHandler;
@@ -38,6 +42,7 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
     private final ILearningLessonService lessonService;
     private final CourseClient CourseClient;
     private final LearningRecordDelayTaskHandler taskHandler;
+    private final RabbitMqHelper mqHelper;
     /*
     * 实现查看课程的学习进度
     * */
@@ -128,6 +133,7 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
         if (!success) {
             throw new DbException("新增考试记录失败！");
         }
+        this.MqSendSavePoint(userId,PointsRecordType.LEARNING);
         return true;
 
     }
@@ -171,7 +177,18 @@ public class LearningRecordServicelmpl extends ServiceImpl<LearningRecordMapper,
             throw new DbException("更新学习记录失败！");
         }
         taskHandler.cleanRecordCache(dto.getLessonId(), dto.getSectionId());
+        //发送MQ 保存积分明细表中
+        this.MqSendSavePoint(userId, PointsRecordType.LEARNING);
         return true ;
+
+    }
+
+    private void MqSendSavePoint(Long userId, PointsRecordType learning) {
+        mqHelper.send(
+                MqConstants.Exchange.LEARNING_EXCHANGE,
+                MqConstants.Key.LEARN_SECTION,
+                userId
+        );
 
     }
 
