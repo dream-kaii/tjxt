@@ -12,7 +12,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 @SpringBootApplication
-@EnableScheduling
+@EnableScheduling //开启自动定时
 @MapperScan("com.tianji.learning.mapper")
 @Slf4j
 public class LearningApplication {
